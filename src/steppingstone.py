@@ -4,6 +4,7 @@ from typing import List
 import sys
 import requests
 from networkhelper import *
+import argparse
 
 
 def relay_msg(url, hops):
@@ -16,11 +17,13 @@ def relay_msg(url, hops):
             conn_success = True
         except:
             print('Failed to connect to {}:{}'.format(ip, port))
-    send_msg(next_hop, type='RELAY', msg=encode_relay_msg(url, hops))
+    print('Relaying request to {}:{}'.format(ip, port))
+    send_msg(next_hop, req_type='RELAY', msg=encode_relay_msg(url, hops))
     return next_hop
 
 
 def wget_content(url):
+    print('Fetching url {}'.format(url))
     if not url.startswith('http://'):
         url = 'http://' + url
     if url[-1] == '/':
@@ -52,11 +55,14 @@ def start_async_server(port):
     server_socket.bind(('', port))
     server_socket.listen(5)
     connection_threads = []
+    print('Waiting for connections on port {}'.format(port))
     while True:
         try:
-            new_client = server_socket.accept()
+            new_client, addr = server_socket.accept()
+            print('New connection from {}'.format(addr))
             new_client_thread = threading.Thread(target=handle_new_connection, args=(new_client, ), daemon=True)
             connection_threads.append(new_client_thread)
+            new_client_thread.start()
         except KeyboardInterrupt:
             print('Execution was interrupted, exiting now...')
             for thread in connection_threads:
@@ -65,5 +71,8 @@ def start_async_server(port):
 
 
 if __name__ == "__main__":
-    encoding, txt = wget_content(sys.argv[1])
-    print(txt)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--port', type=int, default=8080, help='TCP port the stepping stone will use to listen')
+    args = parser.parse_args()
+    port = args.port
+    start_async_server(port)

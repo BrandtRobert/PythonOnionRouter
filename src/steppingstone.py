@@ -1,67 +1,9 @@
 import threading
 import socket
-import random
-import struct
-from types import SimpleNamespace
 from typing import List
-import os
-
-
-def send_msg(client_con: socket.socket, req_type: str, msg: str):
-    """
-    Message format
-    ----------------------
-    msg_length   = 2 bytes
-    request_type = 5 bytes
-    msg_contents = msg_length - 5 bytes
-    """
-    length = socket.htons(len(msg))
-    client_con.send(struct.pack('>H', length))
-    client_con.send(req_type.encode('utf-8'))
-    client_con.sendall(msg)
-
-
-def receive_msg(client_con: socket.socket):
-    """
-    Message format
-    ----------------------
-    msg_length   = 2 bytes
-    request_type = 5 bytes
-    msg_contents = msg_length - 5 bytes
-    """
-    msg_length = socket.ntohs(int(client_con.recv(2)))
-    request_type = client_con.recv(5)
-    amount_read = 0
-    # Force socket to read the whole msg length
-    msg = ''
-    while len(msg) < (msg_length - 5):
-        msg = msg + client_con.recv(msg_length - 5).decode('utf-8')
-    sn = SimpleNamespace()
-    sn.request_type = request_type
-    sn.msg_length = msg_length
-    sn.msg = msg
-    return msg
-
-
-def get_next_hop(hops):
-    return hops[random.randint() % len(hops)]
-
-
-def parse_msg_hops(msg: str):
-    hops = []
-    for line in msg.splitlines():
-        splits = line.split('\\w+')
-        ip = splits[0]
-        port = int(splits[1])
-        hops.append((ip, port))
-    return hops
-
-
-def encode_relay_msg(url, hops: List):
-    msg = url + '\n'
-    for hop in hops:
-        msg = msg + '{} {}'.format(hop[0], hop[1])
-    return msg
+import sys
+import requests
+from networkhelper import *
 
 
 def relay_msg(url, hops):
@@ -79,14 +21,12 @@ def relay_msg(url, hops):
 
 
 def wget_content(url):
-    exit_code = os.system('wget {}'.format(url))
-    if exit_code != 0:
-        return -1
-    filename = url.split('/')[-1]
-    with open(filename, 'r') as f:
-        content = f.read()
-        os.remove('filename')
-        return content
+    if not url.startswith('http://'):
+        url = 'http://' + url
+    if url[-1] == '/':
+        url = url + '/'
+    r = requests.get(url, verify=False)
+    return r.encoding, r.text
 
 
 def handle_new_connection(client_con: socket.socket):
@@ -99,7 +39,8 @@ def handle_new_connection(client_con: socket.socket):
             payload = receive_msg(next_hop_conn).msg
             send_msg(client_con, req_type='RESPN', msg=payload)
         else:
-            content = wget_content(url)
+            encoding, txt = wget_content(url)
+            content = str(encoding) + "\n" + txt
             send_msg(client_con, req_type='RESPN', msg=content)
     else:
         client_con.close()
@@ -121,3 +62,8 @@ def start_async_server(port):
             for thread in connection_threads:
                 thread.join(2)
             exit(0)
+
+
+if __name__ == "__main__":
+    encoding, txt = wget_content(sys.argv[1])
+    print(txt)

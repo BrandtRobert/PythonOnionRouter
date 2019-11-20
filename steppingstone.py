@@ -50,6 +50,7 @@ def handle_new_connection(client_con: socket.socket):
 
 
 def start_async_server(port):
+    print('Starting server...')
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('', port))

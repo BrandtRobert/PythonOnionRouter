@@ -1,2 +1,7 @@
-1
-localhost 9090
+6
+olympia.cs.colostate.edu 8765
+denver.cs.colostate.edu 8765
+nashville.cs.colostate.edu 8765
+cheyenne.cs.colostate.edu 8765
+helena.cs.colostate.edu 8765
+salem.cs.colostate.edu 8765

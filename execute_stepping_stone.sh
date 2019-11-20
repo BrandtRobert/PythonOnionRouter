@@ -1,6 +1,6 @@
 GITURL=https://github.com/BrandtRobert/PythonOnionRouter.git
 STEPPINGSTONEDIR=~/OnionRouter/
-
+PORT=$1
 echo "Checking for $STEPPINGSTONEDIR"
 
 if [ ! -d "$STEPPINGSTONEDIR" ]
@@ -20,6 +20,7 @@ fi
 
 cd ./PythonOnionRouter || exit
 
-nohup python3 ./steppingstone.py -p9977 > steppingstone.log 2>&1 & echo $! > steppingstone.pid
+source ./venv/bin/activate
 
-#ssh root@MachineB 'bash -s' < local_script.sh
+nohup python3 ./steppingstone.py -p $PORT > steppingstone.log 2>&1 & echo $! > steppingstone.pid
+

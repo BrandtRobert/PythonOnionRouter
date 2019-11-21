@@ -4,5 +4,6 @@ PORT=$1
 
 cd $STEPPINGSTONEDIR/PythonOnionRouter || exit
 kill `cat $HOSTNAME-steppingstone.pid`
-#rm $HOSTNAME-steppingstone.pid
-#rm $HOSTNAME-steppingstone.log
+sleep 1
+rm $HOSTNAME-steppingstone.pid
+rm $HOSTNAME-steppingstone.log
